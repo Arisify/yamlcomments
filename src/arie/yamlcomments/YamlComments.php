@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace arie\skywar\utils;
+namespace arie\yamlcomments;
 
 use pocketmine\utils\Config;
 use Webmozart\PathUtil\Path;
