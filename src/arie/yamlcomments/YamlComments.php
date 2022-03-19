@@ -22,6 +22,7 @@ class YamlComments{
 		$this->file = $config->getPath();
 		$this->supported = strtolower(Path::getExtension($this->file)) === "yml";
 		$this->config = $config;
+		$this->loadDoc();
 	}
 
 	public function isSupportedFile() : bool{
