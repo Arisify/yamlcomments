@@ -161,7 +161,7 @@ class YamlComments{
 	 * server turn on and off)
 	 * @return void
 	 */
-	private function saveDoc() : void{
+	public function saveDoc() : void{
 		if (!$this->supported) {
 			return;
 		}
