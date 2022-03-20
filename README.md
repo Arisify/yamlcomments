@@ -31,7 +31,7 @@ Yes, you can add it by this simply code:
 ```php
 $key1 = "key1";
 $doc = "This is a doc for key1";
-$doc = "This is an inline doc for key1";
+$inline_doc = "This is an inline doc for key1";
 $yaml_comments->setDoc($key1, $doc);
 $yaml_comments->setInlineDoc($key1, $inline_doc);
 ```
