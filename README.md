@@ -11,7 +11,7 @@ $yaml_comments = new YamlComments($config);
 ## How do I save the comments/documents?
 ```php
 $yaml_comments->save(); //If you want to save both config and documents
-$yaml_comments->saveDoc(); //If you want to save documents
+$yaml_comments->parseDocuments(); //If you want to save documents
 ```
 Nothing happens when you don't save your config first, but I should tell you that if you save your config after save documents, the documents won't be saved.
 ## How will this affect my server performance?

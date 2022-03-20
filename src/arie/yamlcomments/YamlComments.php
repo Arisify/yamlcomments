@@ -22,7 +22,7 @@ class YamlComments{
 		$this->file = $config->getPath();
 		$this->supported = strtolower(Path::getExtension($this->file)) === "yml";
 		$this->config = $config;
-		$this->loadDoc();
+		$this->emitDocuments();
 	}
 
 	public function isSupportedFile() : bool{
@@ -37,7 +37,7 @@ class YamlComments{
 	 * server turn on and off)
 	 * @return void
 	 */
-	public function loadDoc() : void{
+	public function emitDocuments() : void{
 		if (!$this->supported) {
 			return;
 		}
@@ -114,7 +114,7 @@ class YamlComments{
 	 */
 	public function saveConfig() : void{
 		$this->config->save();
-		$this->saveDoc();
+		$this->parseDocuments();
 	}
 
 	/**
@@ -161,7 +161,7 @@ class YamlComments{
 	 * server turn on and off)
 	 * @return void
 	 */
-	public function saveDoc() : void{
+	public function parseDocuments() : void{
 		if (!$this->supported) {
 			return;
 		}
