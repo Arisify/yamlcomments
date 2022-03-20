@@ -160,8 +160,12 @@ class YamlComments{
 	 * Not recommended for production because lack of RAM eater (Note that this only takes a lot of CPU usage when the
 	 * server turn on and off)
 	 * @return void
+	 * @throws \JsonException
 	 */
-	public function parseDocuments() : void{
+	public function parseDocuments(bool $save = false) : void{
+		if ($save) {
+			$this->config->save();
+		}
 		if (!$this->supported) {
 			return;
 		}
