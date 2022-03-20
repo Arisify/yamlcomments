@@ -113,8 +113,7 @@ class YamlComments{
 	 * @throws \JsonException
 	 */
 	public function saveConfig() : void{
-		$this->config->save();
-		$this->parseDocuments();
+		$this->parseDocuments(true);
 	}
 
 	/**
