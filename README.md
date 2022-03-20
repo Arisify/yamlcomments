@@ -54,5 +54,6 @@ projects:
 ```
 
 ## Are there any issues?
-Currently, I only know there was an issue where you can't add documents on the header and footer (this was intended because I thought this was not possible on YAML).
+- Currently, I only know there was an issue where you can't add documents on the header and footer (this was intended because I thought this was not possible on YAML).
+- The array in yaml is working different from what i expected but this won't cause anything but the logic
 <br> but if you found any issues, please report it [here](https://github.com/NTT1906/yamlcomments/issues)
