@@ -2,44 +2,47 @@
 A PMMP virion pasting YAML comments.
 
 ## How does it work?
-It simply cuts through each line of Config and calculates things to find documents and comments. Then it saves those data back to Config if the old key is still there. You can use something like this.
+It simply cuts through each line of Config and calculates things to find comments. Then it saves those data back to Config if the old key is still there. You can use something like this.
 ```php
 $config = new Config("path");
 $yaml_comments = new YamlComments($config);
 ```
 
-## How do I save the comments/documents?
+## How do I save the comments?
 ```php
-$yaml_comments->save(); //If you want to save both config and documents
-$yaml_comments->parseDocuments(save: false); //If you want to parse documents, if make is true. It would save the config first 
+$yaml_comments->save(); //If you want to save both config and comments
+$yaml_comments->emitComments(save: false); //If you want to parse comments. Make 'make' true if you want to save the config first 
 ```
-Nothing happens when you don't save your config first, but I should tell you that if you save your config after save documents, the documents won't be saved.
+Nothing happens when you don't save your config first, but I should tell you that if you save your config after save comments, the comments won't be saved.
 ## How will this affect my server performance?
 Yesn't, this won't affect so much when the server is running stably, but it does require some cpu usage when you start or stop your server. 
-<br> But none or less, I don't recommend you using this for a producing server
-## What is doc and Inline doc?
-It doesn't make much sense, it's just that my understanding is so low that I don't know what to call it. It's like this:
+<br> But none or less, I don't recommend you using this for a producing server.
+## What is comments and inline comments?
+An YAML comment is started with **#**, this can be classified into two groups: comments (intended comments?) and inline comments
+- A comment appears at the beginning of a line.
+- An inline comment appears after the value of a keys.
 ```yml
 ---
-#This is a doc
-key: val #This is an Inline doc
+#This is a comment
+key: val #This is an inline comment
+#However, this virion considered this is key1' comment even if the content is pointing at key, you can't know it?
 key1: val
 ...
 ```
-## Can I add documents for non-documented line?
-Yes, you can add it by this simply code:
+## Can I add comments for non-commented line?
+Yes, you can add it and modify the old comments too.
 ```php
 $key1 = "key1";
-$doc = "This is a doc for key1";
-$inline_doc = "This is an inline doc for key1";
-$yaml_comments->setDoc($key1, $doc);
-$yaml_comments->setInlineDoc($key1, $inline_doc);
+$comment = "This is a comment for key1";
+$inline_comment = "This is an inline comments for key1";
+$yaml_comments->setComments($key1, $comment);
+$yaml_comments->setInlineComments($key1, $inline_comment);
 ```
-After savings the config and documents, the config file will appear to have something like this
+After savings the config and comments, the config file will appear to have something like this
 ```yml
 ---
-# This is a doc for key1
-key1: val #This is an inline doc for key1
+#This is a comment for key1
+key1: val #This is an inline comment for key1
 ...
 ```
 ## How do I include this in other plugins
@@ -54,6 +57,5 @@ projects:
 ```
 
 ## Are there any issues?
-- Currently, I only know there was an issue where you can't add documents on the header and footer (this was intended because I thought this was not possible on YAML).
-- The array in yaml is working different from what i expected but this won't cause anything but the logic
-<br> but if you found any issues, please report it [here](https://github.com/NTT1906/yamlcomments/issues)
+- The array in yaml is working different from what I expected but this won't cause anything but the logic
+<br> but if you found any issues, please report it [here](https://github.com/Arisify/yamlcomments/issues)

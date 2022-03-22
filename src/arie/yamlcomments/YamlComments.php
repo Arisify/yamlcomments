@@ -7,22 +7,22 @@ use pocketmine\utils\Config;
 use Webmozart\PathUtil\Path;
 
 class YamlComments{
+	private Config $config;
 	/** @var string */
 	private string $file;
-	/** @var Config */
-	private Config $config;
 	/** @var array */
-	private array $doc = [];
+	private array $comments = [];
 	/** @var array */
-	private array $inline_doc = [];
+	private array $inline_comments = [];
 	/** @var bool */
 	private bool $supported;
+	/** @var Config */
 
 	public function __construct(Config $config){
 		$this->file = $config->getPath();
-		$this->supported = strtolower(Path::getExtension($this->file)) === "yml";
 		$this->config = $config;
-		$this->emitDocuments();
+		$this->supported = strtolower(Path::getExtension($this->file)) === "yml";
+		$this->parseComments();
 	}
 
 	public function isSupportedFile() : bool{
@@ -30,47 +30,66 @@ class YamlComments{
 	}
 
 	/**
-	 * This function will scan the YAML file for comments and stuff then save it in two different array, one for
-	 * documentations above it, one for documentations after it.
+	 * This function will scan the YAML file for its comments then save it in two different array, one for comments
+	 * above it, one for comments in that line.
 	 *
-	 * Not recommended for production because lack of RAM eater (Note that this only takes a lot of CPU usage when the
-	 * server turn on and off)
+	 * Not recommended for production because lack of RAM eater (Note: this only takes a lot of CPU usage when you
+	 * calling it, I recommend you call this function when the server start)
 	 * @return void
 	 */
-	public function emitDocuments() : void{
+	public function parseComments() : void{
 		if (!$this->supported) {
 			return;
 		}
 		$lines = file($this->file, FILE_IGNORE_NEW_LINES);
 		$key = "";
 		$spaces = [];
-		$doc = [];
+		$comments = [];
+		$omitted = false;
+
 		foreach ($lines as $line) {
-			if ($line === '...' || $line === '---') {
-				continue;
+			if ($omitted) {
+				break;
 			}
 			$l = ltrim($line);
 			$colon_pos = strpos($l, ':');
-			if (!isset($l[0])) { //Todo: $this->isBlank($line)?
-				$doc[] = "";
+			if (!isset($l[0])) {
+				$comments[] = "";
 				continue;
 			}
 			if ($l[0] === '#') {
-				$doc[] = $line;
+				$comments[] = $line;
 				continue;
 			}
-
+			if (str_starts_with($l, '---')) {
+				$omitted = true;
+				$this->comments['---'] = $comments;
+				$sharp_pos = strpos($l, '#');
+				if ($sharp_pos !== false) {
+					$this->inline_comments['---'] = mb_substr($l, $sharp_pos);
+				}
+				continue;
+			}
+			if (str_starts_with($l, '...')) {
+				$omitted = true;
+				$this->comments['...'] = $comments;
+				$sharp_pos = strpos($l, '#');
+				if ($sharp_pos !== false) {
+					$this->inline_comments['...'] = mb_substr($l, $sharp_pos);
+				}
+				continue;
+			}
 			if ($colon_pos === false) {
 				$val = str_replace([' ', '-'], '', $l);
 				$sharp_pos = strpos($val, '#');
 				if ($sharp_pos !== false) {
 					$val = mb_substr($val, 0, $sharp_pos);
-					$this->inline_doc[$key . "." . $val] = mb_substr($l, $sharp_pos);
+					$this->inline_comments[$key . "." . $val] = mb_substr($l, $sharp_pos);
 				}
 
-				if (!empty($doc)) {
-					$this->doc[$key . "." . $val] = $doc;
-					$doc = [];
+				if (!empty($comments)) {
+					$this->comments[$key . "." . $val] = $comments;
+					$comments = [];
 				}
 				continue;
 			}
@@ -98,94 +117,152 @@ class YamlComments{
 
 			$spaces[$key] = $space;
 
-			if (!empty($doc)) {
-				$this->doc[$key] = $doc;
-				$doc = [];
+			if (!empty($comments)) {
+				$this->comments[$key] = $comments;
+				$comments = [];
 			}
 			$sharp_pos = strpos($l, '#');
 			if ($sharp_pos !== false) {
-				$this->inline_doc[$key] = mb_substr($l, $sharp_pos);
+				$this->inline_comments[$key] = mb_substr($l, $sharp_pos);
 			}
 		}
 	}
 
-	/**
-	 * @throws \JsonException
-	 */
-	public function saveConfig() : void{
-		$this->parseDocuments(true);
+	public function getHeaderComments() : ?array{
+		return $this->getComments('---');
+	}
+
+	public function getHeaderParagraph() : string{
+		return $this->getCommentsParagraph('---');
+	}
+
+	public function setHeaderComments(array $comments = []) : void{
+		$this->setComments('---', $comments);
+	}
+
+	public function addHeaderComments(array $comments = []) : void{
+		$this->addComments('---', $comments);
+	}
+
+	public function getFooterComments() : ?array{
+		return $this->getComments('...');
+	}
+
+	public function getFooterParagraph() : string{
+		return $this->getCommentsParagraph('...');
+	}
+
+	public function setFooterComments(array $comments = []) : void{
+		$this->setComments('...', $comments);
+	}
+
+	public function addFooterComments(array $comments = []) : void{
+		$this->addComments('...', $comments);
+	}
+
+	public function getComments(string $key) : ?array{
+		if (!isset($this->comments[$key])) {
+			return null;
+		}
+		return array_map(static fn(string $comments)  : string => mb_substr($comments, 1), $this->comments[$key]);
+	}
+
+	public function getCommentsParagraph(string $key) : string{
+		if (!isset($this->comments[$key])) {
+			return "";
+		}
+		return implode(PHP_EOL, array_map(static fn(string $comments)  : string => mb_substr($comments, 1), $this->comments[$key]));
+	}
+
+	public function setComments(string $key, array $comments = []) : void{
+		if (empty($comments)) {
+			$this->comments[$key] = null;
+			return;
+		}
+		$this->comments[$key] = array_map(static fn(string $comments)  : string => ltrim($comments)[0] !== '#' ? '#' . $comments : $comments, $comments);
+	}
+
+	public function addComments(string $key, array $comments = []) : void{
+		if (empty($this->comments)) {
+			return;
+		}
+		$this->comments[$key] = array_merge($this->comments[$key], array_map(static fn(string $comments)  : string => ltrim($comments)[0] !== '#' ? '#' . $comments : $comments, $comments));
+	}
+
+	public function getInlineComments(string $key) : string{
+		$comments = $this->inline_comments[$key];
+		if (ltrim($comments)[0] === '#') {
+			return mb_substr($comments, 1);
+		}
+		return $comments;
+	}
+
+	public function setInlineComments(string $key, string $comments) : void{
+		if (ltrim($comments)[0] !== '#') {
+			$this->inline_comments[$key] = '#' . $comments;
+			return;
+		}
+		$this->inline_comments[$key] = $comments;
 	}
 
 	/**
-	 * @param string $key
-	 * @return array|null
-	 */
-	public function getDoc(string $key) : ?array{
-		return $this->doc[$key] ?? null;
-	}
-
-	public function getDocParagraph(string $key) : ?string{
-		return isset($this->doc[$key]) ? implode(PHP_EOL, $this->doc[$key]) : null;
-	}
-
-	public function setDoc(string $key, array $doc = []) : void{
-		$this->doc[$key] = $doc;
-	}
-
-	public function addDoc(string $key, array $doc = []) : void{
-		$this->doc[$key] = array_merge($this->doc[$key] ?? [], $doc);
-	}
-
-	/**
-	 * @param string $key
-	 * @return string|null
-	 */
-	public function getInlineDoc(string $key) : ?string{
-		return $this->inline_doc[$key] ?? null;
-	}
-
-	public function setInlineDoc(string $key, string $doc) : void{
-		$this->inline_doc[$key] = $doc;
-	}
-
-	public function isBlank(string $line) : bool{
-		return preg_match('#^\s*$#', $line);
-	}
-
-	/**
-	 * This function will scan the YAML file again for keys and value, then check if there are comments of it in the data
+	 * This function will scan the YAML file again for keys and value, then check if the saved key before exist
 	 * If yes, the data will be parsed with the key and value
 	 *
-	 * Not recommended for production because lack of RAM eater (Note that this only takes a lot of CPU usage when the
-	 * server turn on and off)
+	 * Not recommended for production because lack of RAM eater (Note: this takes a lot of CPU usage when you call
+	 * it. I recommend you calling this when the server turn off)
+	 * @param bool $save
 	 * @return void
 	 * @throws \JsonException
 	 */
-	public function parseDocuments(bool $save = false) : void{
+	public function emitComments(bool $save = false) : void{
 		if ($save) {
 			$this->config->save();
 		}
 		if (!$this->supported) {
 			return;
 		}
+
 		$lines = file($this->file, FILE_IGNORE_NEW_LINES);
 		$key = "";
 		$spaces = [];
 		$contents = "";
+		$omitted = false;
 		foreach ($lines as $line) {
+			if ($omitted) {
+				break;
+			}
 			$l = ltrim($line);
 			$colon_pos = strpos($l, ':');
-			if (!isset($l[0])) { //Todo: $this->isBlank($line)?
+			if (!isset($l[0])) {
 				continue;
 			}
+
+			if (str_starts_with($l, '---')) {
+				$omitted = true;
+				if (isset($this->comments['---'])) {
+					$contents .= implode(PHP_EOL, $this->comments['---']) . PHP_EOL;
+				}
+				$contents .= $line . ($this->inline_comments['---'] ?? "") . PHP_EOL;
+				continue;
+			}
+			if (str_starts_with($l, '...')) {
+				$omitted = true;
+				if (isset($this->comments['...'])) {
+					$contents .= implode(PHP_EOL, $this->comments['...']) . PHP_EOL;
+				}
+				$contents .= $line . ($this->inline_comments['...'] ?? "") . PHP_EOL;
+				continue;
+			}
+
 
 			if ($colon_pos === false) {
 				$val = str_replace([' ', '-'], '', $l);
 				$sub_key = $key . "." . $val;
-				if (isset($this->doc[$sub_key])) {
-					$contents .= implode(PHP_EOL, $this->doc[$sub_key]) . PHP_EOL;
+				if (isset($this->comments[$sub_key])) {
+					$contents .= implode(PHP_EOL, $this->comments[$sub_key]) . PHP_EOL;
 				}
-				$contents .= $line . ($this->inline_doc[$sub_key] ?? "") . PHP_EOL;
+				$contents .= $line . ($this->inline_comments[$sub_key] ?? "") . PHP_EOL;
 				continue;
 			}
 			$space = strlen($line) - strlen($l);
@@ -210,11 +287,16 @@ class YamlComments{
 			}
 			$spaces[$key] = $space;
 
-			if (isset($this->doc[$key])) {
-				$contents .= $this->getDocParagraph($key) . PHP_EOL;
+			if (isset($this->comments[$key])) {
+				$contents .= $this->getCommentsParagraph($key) . PHP_EOL;
 			}
-			$contents .= $line . ($this->getInlineDoc($key) ?? "") . PHP_EOL;
+			$contents .= $line . ($this->getInlineComments($key) ?? "") . PHP_EOL;
 		}
 		file_put_contents($this->file, $contents);
+	}
+
+	/** @throws \JsonException */
+	public function save() : void{
+		$this->emitComments(true);
 	}
 }
