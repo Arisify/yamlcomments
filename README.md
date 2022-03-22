@@ -33,17 +33,39 @@ key1: val
 Yes, you can add it and modify the old comments too.
 ```php
 $key1 = "key1";
-$comment = "This is a comment for key1";
+$comments = [
+    "This is a comment for key1",
+    'This is me :D'
+];
 $inline_comment = "This is an inline comments for key1";
-$yaml_comments->setComments($key1, $comment);
+$yaml_comments->setComments($key1, $comments);
 $yaml_comments->setInlineComments($key1, $inline_comment);
 ```
 After savings the config and comments, the config file will appear to have something like this
 ```yml
 ---
 #This is a comment for key1
+#This is me :D
 key1: val #This is an inline comment for key1
 ...
+```
+# Header and Footer
+- A header started with '---'
+- A footer started with '...'
+```yml
+# Why should you use this virion?
+--- # Header inline comments
+# Footer comment
+... # Thank you for using this virion <3
+```
+With this virion, you can modify it too
+```php
+$yaml_comment->getHeaderParagraph();
+// string(33) "# Why should you use this virion?"
+$yaml_comment->getComments('---');
+// array(1) {[0] => string(33) "# Why should you use this virion?" }
+$yaml_comment->addComments('...', ['#New stuff']);
+// array(2) {[0]=>string(16) "# Footer comment" [1]=>string(10) "#New stuff"}
 ```
 ## How do I include this in other plugins
 If you use [Poggit](https://poggit.pmmp.io) to build your plugin, you can add it to your `.poggit.yml` like so:

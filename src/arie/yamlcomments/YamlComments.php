@@ -133,7 +133,7 @@ class YamlComments{
 	}
 
 	public function getHeaderParagraph() : string{
-		return $this->getCommentsParagraph('---');
+		return $this->getCommentParagraph('---');
 	}
 
 	public function setHeaderComments(array $comments = []) : void{
@@ -149,7 +149,7 @@ class YamlComments{
 	}
 
 	public function getFooterParagraph() : string{
-		return $this->getCommentsParagraph('...');
+		return $this->getCommentParagraph('...');
 	}
 
 	public function setFooterComments(array $comments = []) : void{
@@ -167,7 +167,7 @@ class YamlComments{
 		return array_map(static fn(string $comments)  : string => mb_substr($comments, 1), $this->comments[$key]);
 	}
 
-	public function getCommentsParagraph(string $key) : string{
+	public function getCommentParagraph(string $key) : string{
 		if (!isset($this->comments[$key])) {
 			return "";
 		}
@@ -288,7 +288,7 @@ class YamlComments{
 			$spaces[$key] = $space;
 
 			if (isset($this->comments[$key])) {
-				$contents .= $this->getCommentsParagraph($key) . PHP_EOL;
+				$contents .= $this->getCommentParagraph($key) . PHP_EOL;
 			}
 			$contents .= $line . ($this->getInlineComments($key) ?? "") . PHP_EOL;
 		}
