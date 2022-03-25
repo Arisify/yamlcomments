@@ -48,9 +48,6 @@ class YamlComments{
 		$omitted = false;
 
 		foreach ($lines as $line) {
-			if ($omitted) {
-				break;
-			}
 			$l = ltrim($line);
 			$colon_pos = strpos($l, ':');
 			if (!isset($l[0])) {
@@ -62,22 +59,28 @@ class YamlComments{
 				continue;
 			}
 			if (str_starts_with($l, '---')) {
-				$omitted = true;
-				$this->comments['---'] = $comments;
+				if ($omitted) {
+					break;
+				}
+				if (!empty($comments)) {
+					$this->comments['---'] = $comments;
+				}
 				$sharp_pos = strpos($l, '#');
 				if ($sharp_pos !== false) {
 					$this->inline_comments['---'] = mb_substr($l, $sharp_pos);
 				}
+				$omitted = true;
 				continue;
 			}
 			if (str_starts_with($l, '...')) {
-				$omitted = true;
-				$this->comments['...'] = $comments;
+				if (!empty($comments)) {
+					$this->comments['...'] = $comments;
+				}
 				$sharp_pos = strpos($l, '#');
 				if ($sharp_pos !== false) {
 					$this->inline_comments['...'] = mb_substr($l, $sharp_pos);
 				}
-				continue;
+				break;
 			}
 			if ($colon_pos === false) {
 				$val = str_replace([' ', '-'], '', $l);
@@ -126,6 +129,8 @@ class YamlComments{
 				$this->inline_comments[$key] = mb_substr($l, $sharp_pos);
 			}
 		}
+		print_r($this->comments);
+		print_r($this->inline_comments);
 	}
 
 	public function getHeaderComments() : ?array{
@@ -190,6 +195,9 @@ class YamlComments{
 	}
 
 	public function getInlineComments(string $key) : string{
+		if (!isset($this->inline_comments[$key])) {
+			return "";
+		}
 		$comments = $this->inline_comments[$key];
 		if (ltrim($comments)[0] === '#') {
 			return mb_substr($comments, 1);
@@ -229,9 +237,6 @@ class YamlComments{
 		$contents = "";
 		$omitted = false;
 		foreach ($lines as $line) {
-			if ($omitted) {
-				break;
-			}
 			$l = ltrim($line);
 			$colon_pos = strpos($l, ':');
 			if (!isset($l[0])) {
@@ -239,20 +244,30 @@ class YamlComments{
 			}
 
 			if (str_starts_with($l, '---')) {
-				$omitted = true;
+				if ($omitted) {
+					break;
+				}
 				if (isset($this->comments['---'])) {
 					$contents .= implode(PHP_EOL, $this->comments['---']) . PHP_EOL;
 				}
-				$contents .= $line . ($this->inline_comments['---'] ?? "") . PHP_EOL;
+				$contents .= $line;
+				if (isset($this->inline_comments['---'])) {
+					$contents .= ' ' . $this->inline_comments['---'];
+				}
+				$contents .= PHP_EOL;
+				$omitted = true;
 				continue;
 			}
 			if (str_starts_with($l, '...')) {
-				$omitted = true;
 				if (isset($this->comments['...'])) {
-					$contents .= implode(PHP_EOL, $this->comments['...']) . PHP_EOL;
+					$contents .= ' ' . implode(PHP_EOL, $this->comments['...']) . PHP_EOL;
 				}
-				$contents .= $line . ($this->inline_comments['...'] ?? "") . PHP_EOL;
-				continue;
+				$contents .= $line;
+				if (isset($this->inline_comments['...'])) {
+					$contents .= ' ' . $this->inline_comments['...'];
+				}
+				$contents .= PHP_EOL;
+				break;
 			}
 
 
@@ -262,7 +277,11 @@ class YamlComments{
 				if (isset($this->comments[$sub_key])) {
 					$contents .= implode(PHP_EOL, $this->comments[$sub_key]) . PHP_EOL;
 				}
-				$contents .= $line . ($this->inline_comments[$sub_key] ?? "") . PHP_EOL;
+				$contents .= $line;
+				if (isset($this->inline_comments[$sub_key])) {
+					$contents .= ' ' . $this->inline_comments[$sub_key];
+				}
+				$contents .= PHP_EOL;
 				continue;
 			}
 			$space = strlen($line) - strlen($l);
@@ -288,9 +307,13 @@ class YamlComments{
 			$spaces[$key] = $space;
 
 			if (isset($this->comments[$key])) {
-				$contents .= $this->getCommentParagraph($key) . PHP_EOL;
+				$contents .= implode(PHP_EOL, $this->comments[$key]) . PHP_EOL;
 			}
-			$contents .= $line . ($this->getInlineComments($key) ?? "") . PHP_EOL;
+			$contents .= $line;
+			if (isset($this->inline_comments[$key])) {
+				$contents .= ' ' . $this->inline_comments[$key];
+			}
+			$contents .= PHP_EOL;
 		}
 		file_put_contents($this->file, $contents);
 	}
