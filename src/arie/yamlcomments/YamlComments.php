@@ -129,8 +129,6 @@ class YamlComments{
 				$this->inline_comments[$key] = mb_substr($l, $sharp_pos);
 			}
 		}
-		print_r($this->comments);
-		print_r($this->inline_comments);
 	}
 
 	public function getHeaderComments() : ?array{
