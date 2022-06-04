@@ -7,7 +7,6 @@ use pocketmine\utils\Config;
 use Webmozart\PathUtil\Path;
 
 class YamlComments{
-	private Config $config;
 	/** @var string */
 	private string $file;
 	/** @var array */
@@ -16,12 +15,10 @@ class YamlComments{
 	private array $inline_comments = [];
 	/** @var bool */
 	private bool $supported;
-	/** @var Config */
 
-	public function __construct(Config $config){
+	public function __construct(protected Config $config){
 		$this->file = $config->getPath();
-		$this->config = $config;
-		$this->supported = strtolower(Path::getExtension($this->file)) === "yml";
+		$this->supported = strtolower(pathinfo($this->file, PATHINFO_EXTENSION)) === "yml";
 		$this->parseComments();
 	}
 
@@ -319,5 +316,12 @@ class YamlComments{
 	/** @throws \JsonException */
 	public function save() : void{
 		$this->emitComments(true);
+	}
+
+	/**
+	 * @return Config
+	 */
+	public function getConfig() : Config{
+		return $this->config;
 	}
 }
