@@ -16,7 +16,7 @@ class YamlComments{
 	/** @var bool */
 	private bool $supported;
 
-	public function __construct(protected Config $config){
+	public function __construct(string $content){
 		$this->file = $config->getPath();
 		$this->supported = strtolower(pathinfo($this->file, PATHINFO_EXTENSION)) === "yml";
 		$this->parseComments();
