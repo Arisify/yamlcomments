@@ -3,12 +3,7 @@ declare(strict_types=1);
 
 namespace arie\yamlcomments;
 
-use pocketmine\utils\Config;
-use Webmozart\PathUtil\Path;
-
 class YamlComments{
-	/** @var string */
-	private string $file;
 	/** @var array */
 	private array $comments = [];
 	/** @var array */
@@ -16,9 +11,10 @@ class YamlComments{
 	/** @var bool */
 	private bool $supported;
 
-	public function __construct(string $content){
-		$this->file = $config->getPath();
-		$this->supported = strtolower(pathinfo($this->file, PATHINFO_EXTENSION)) === "yml";
+	public function __construct(
+		protected string $filePath
+	){
+		$this->supported = strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) === "yml";
 		$this->parseComments();
 	}
 
@@ -38,7 +34,7 @@ class YamlComments{
 		if (!$this->supported) {
 			return;
 		}
-		$lines = file($this->file, FILE_IGNORE_NEW_LINES);
+		$lines = file($this->filePath, FILE_IGNORE_NEW_LINES);
 		$key = "";
 		$spaces = [];
 		$comments = [];
@@ -214,19 +210,14 @@ class YamlComments{
 	 *
 	 * Not recommended for production because lack of RAM eater (Note: this takes a lot of CPU usage when you call
 	 * it. I recommend you calling this when the server turn off)
-	 * @param bool $save
 	 * @return void
-	 * @throws \JsonException
 	 */
-	public function emitComments(bool $save = false) : void{
-		if ($save) {
-			$this->config->save();
-		}
+	public function emitComments() : void{
 		if (!$this->supported) {
 			return;
 		}
 
-		$lines = file($this->file, FILE_IGNORE_NEW_LINES);
+		$lines = file($this->filePath, FILE_IGNORE_NEW_LINES);
 		$key = "";
 		$spaces = [];
 		$contents = "";
@@ -310,18 +301,6 @@ class YamlComments{
 			}
 			$contents .= PHP_EOL;
 		}
-		file_put_contents($this->file, $contents);
-	}
-
-	/** @throws \JsonException */
-	public function save() : void{
-		$this->emitComments(true);
-	}
-
-	/**
-	 * @return Config
-	 */
-	public function getConfig() : Config{
-		return $this->config;
+		file_put_contents($this->filePath, $contents);
 	}
 }

@@ -1,6 +1,8 @@
 # yamlcomments
 A PMMP virion pasting YAML comments.
 
+Notes: Dropped support for Config
+
 ## How does it work?
 It simply cuts through each line of Config and calculates things to find comments. Then it saves those data back to Config if the old key is still there. You can use something like this.
 ```php
@@ -11,7 +13,7 @@ $yaml_comments = new YamlComments($config);
 ## How do I save the comments?
 ```php
 $yaml_comments->save(); //If you want to save both config and comments
-$yaml_comments->emitComments(save: false); //If you want to parse comments. Make 'make' true if you want to save the config first 
+$yaml_comments->emitComments(); //The file got overlay by comments!
 ```
 Nothing happens when you don't save your config first, but I should tell you that if you save your config after save comments, the comments won't be saved.
 ## How will this affect my server performance?
